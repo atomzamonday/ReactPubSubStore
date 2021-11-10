@@ -32,13 +32,15 @@ const store = createPubSubStore<Data, "update" | "reset", Partial<Data>>(
 
 // Rerender within all depencies changed. [username, password]
 const InputOne: React.FC = () => {
-  const [state, dispatch] = usePubSubStore<Data, "update", Partial<Data>>(store);
+  const [state, dispatch] = usePubSubStore<Data, "update", Partial<Data>>(
+    store
+  );
 
   return (
     <input
       value={state.username}
       onChange={(e) => {
-        dispatch({
+        store.dispatch({
           type: "update",
           payload: {
             username: e.target.value,
@@ -51,17 +53,14 @@ const InputOne: React.FC = () => {
 
 // Rerender within only password changed (Recommended).
 const InputTwo: React.FC = () => {
-  const [password, dispatch] = usePubSubSelector<Data, "update", Partial<Data>>(
-    (state) => state.password,
-    store
-  );
+  const password = usePubSubSelector((state) => state.password, store);
 
   return (
     <input
       type="password"
       value={password}
       onChange={(e) => {
-        dispatch({
+        store.dispatch({
           type: "update",
           payload: {
             password: e.target.value,

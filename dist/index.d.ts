@@ -14,7 +14,7 @@ declare type PubSubStore<State, ActionType extends string, Payload extends unkno
 };
 declare const createPubSubStore: <State, ActionType extends string, Payload extends unknown>(initialState: State, reducer: Reducer<State, Action<ActionType, Payload>>) => PubSubStore<State, ActionType, Payload>;
 declare const usePubSubStore: <State, ActionType extends string, Payload extends unknown>(store: PubSubStore<State, ActionType, Payload>) => [State, Dispatch<ActionType, Payload>];
-declare const usePubSubSelector: <State, ActionType extends string, Payload extends unknown>(selector: (state: State) => State[keyof State], pubsubStore: PubSubStore<State, ActionType, Payload>) => [State[keyof State], Dispatch<ActionType, Payload>];
+declare const usePubSubSelector: <Selector extends keyof State, State, ActionType extends string, Payload extends unknown>(selector: (state: State) => State[Selector], pubsubStore: PubSubStore<State, ActionType, Payload>) => State[Selector];
 declare const createBasicStore: <State>(initialValue: State) => PubSubStore<State, "update", Partial<State>>;
 export { createPubSubStore, usePubSubStore, usePubSubSelector, createReducer, createBasicStore, };
 //# sourceMappingURL=index.d.ts.map

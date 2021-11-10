@@ -1,7 +1,7 @@
 import PubSub from "pubsub-js";
 import { nanoid } from "nanoid";
 import createdeepclone from "rfdc";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const deepclone = createdeepclone({
   circles: false,
@@ -28,10 +28,10 @@ const createReducer = <State, Action extends DefaultAction>(
   reducer: Reducer<State, Action>
 ) => reducer;
 
-const basicStateReducer: Reducer<unknown, Action<"update", Partial<unknown>>> = (
-  state,
-  action
-) => {
+const basicStateReducer: Reducer<
+  unknown,
+  Action<"update", Partial<unknown>>
+> = (state, action) => {
   if (action.type === "update") {
     const newState: unknown = {
       //@ts-ignore
@@ -51,7 +51,11 @@ type PubSubStore<State, ActionType extends string, Payload extends unknown> = {
   getCurrentState: () => State;
 };
 
-const createPubSubStore = <State, ActionType extends string, Payload extends unknown>(
+const createPubSubStore = <
+  State,
+  ActionType extends string,
+  Payload extends unknown
+>(
   initialState: State,
   reducer: Reducer<State, Action<ActionType, Payload>>
 ): PubSubStore<State, ActionType, Payload> => {
@@ -86,7 +90,11 @@ const createPubSubStore = <State, ActionType extends string, Payload extends unk
   };
 };
 
-const usePubSubStore = <State, ActionType extends string, Payload extends unknown>(
+const usePubSubStore = <
+  State,
+  ActionType extends string,
+  Payload extends unknown
+>(
   store: PubSubStore<State, ActionType, Payload>
 ) => {
   const value = store.getCurrentState();
@@ -108,22 +116,22 @@ const usePubSubStore = <State, ActionType extends string, Payload extends unknow
   return [value, dispatch] as [typeof value, typeof dispatch];
 };
 
-const usePubSubSelector = <State, ActionType extends string, Payload extends unknown>(
-  selector: (state: State) => State[keyof State],
+const usePubSubSelector = <
+  Selector extends keyof State,
+  State,
+  ActionType extends string,
+  Payload extends unknown
+>(
+  selector: (state: State) => State[Selector],
   pubsubStore: PubSubStore<State, ActionType, Payload>
 ) => {
-  const value = selector(pubsubStore.getCurrentState() as State);
-  const dispatch = pubsubStore.dispatch;
-  const setId = useState(nanoid())[1];
-  const old = useRef(value);
+  const [value, setValue] = useState(() =>
+    selector(pubsubStore.getCurrentState())
+  );
 
   useEffect(() => {
     const forceStateUpdate = () => {
-      const current = selector(pubsubStore.getCurrentState() as State);
-      if (old.current !== current) {
-        old.current = current;
-        setId(nanoid());
-      }
+      setValue(selector(pubsubStore.getCurrentState()));
     };
     const id = pubsubStore.subscribe(forceStateUpdate);
     const cleanup = () => {
@@ -133,7 +141,7 @@ const usePubSubSelector = <State, ActionType extends string, Payload extends unk
     // eslint-disable-next-line
   }, []);
 
-  return [value, dispatch] as [typeof value, typeof dispatch];
+  return value;
 };
 
 // const customStore = createPubSubStore<StoreData, "update", Partial<StoreData>>(
@@ -162,3 +170,7 @@ export {
   createReducer,
   createBasicStore,
 };
+
+// const store = createPubSubStore<{x:"123",y:number},"update", Partial<{x:string}>>({x:"123",y: 0}, (state, action) => state);
+
+// const x = <{x:"123"}["x"]>usePubSubSelector((state) => state.y, store);

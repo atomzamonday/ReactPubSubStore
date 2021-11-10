@@ -8,7 +8,7 @@ const pubsub_js_1 = __importDefault(require("pubsub-js"));
 const nanoid_1 = require("nanoid");
 const rfdc_1 = __importDefault(require("rfdc"));
 const react_1 = require("react");
-const deepclone = rfdc_1.default({
+const deepclone = (0, rfdc_1.default)({
     circles: false,
     proto: true,
 });
@@ -28,7 +28,7 @@ const basicStateReducer = (state, action) => {
 };
 const createPubSubStore = (initialState, reducer) => {
     let state__ = initialState;
-    const pubId = nanoid_1.nanoid();
+    const pubId = (0, nanoid_1.nanoid)();
     const getCurrentState = () => state__;
     const setCurrentState = (newState) => {
         state__ = newState;
@@ -55,10 +55,10 @@ exports.createPubSubStore = createPubSubStore;
 const usePubSubStore = (store) => {
     const value = store.getCurrentState();
     const dispatch = store.dispatch;
-    const setId = react_1.useState(nanoid_1.nanoid())[1];
-    react_1.useEffect(() => {
+    const setId = (0, react_1.useState)((0, nanoid_1.nanoid)())[1];
+    (0, react_1.useEffect)(() => {
         const forceStateUpdate = () => {
-            setId(nanoid_1.nanoid());
+            setId((0, nanoid_1.nanoid)());
         };
         const id = store.subscribe(forceStateUpdate);
         const cleanup = () => {
@@ -71,17 +71,10 @@ const usePubSubStore = (store) => {
 };
 exports.usePubSubStore = usePubSubStore;
 const usePubSubSelector = (selector, pubsubStore) => {
-    const value = selector(pubsubStore.getCurrentState());
-    const dispatch = pubsubStore.dispatch;
-    const setId = react_1.useState(nanoid_1.nanoid())[1];
-    const old = react_1.useRef(value);
-    react_1.useEffect(() => {
+    const [value, setValue] = (0, react_1.useState)(() => selector(pubsubStore.getCurrentState()));
+    (0, react_1.useEffect)(() => {
         const forceStateUpdate = () => {
-            const current = selector(pubsubStore.getCurrentState());
-            if (old.current !== current) {
-                old.current = current;
-                setId(nanoid_1.nanoid());
-            }
+            setValue(selector(pubsubStore.getCurrentState()));
         };
         const id = pubsubStore.subscribe(forceStateUpdate);
         const cleanup = () => {
@@ -90,7 +83,7 @@ const usePubSubSelector = (selector, pubsubStore) => {
         return cleanup;
         // eslint-disable-next-line
     }, []);
-    return [value, dispatch];
+    return value;
 };
 exports.usePubSubSelector = usePubSubSelector;
 // const customStore = createPubSubStore<StoreData, "update", Partial<StoreData>>(
@@ -109,3 +102,5 @@ const createBasicStore = (initialValue) => {
     return store;
 };
 exports.createBasicStore = createBasicStore;
+// const store = createPubSubStore<{x:"123",y:number},"update", Partial<{x:string}>>({x:"123",y: 0}, (state, action) => state);
+// const x = <{x:"123"}["x"]>usePubSubSelector((state) => state.y, store);
