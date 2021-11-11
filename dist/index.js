@@ -26,30 +26,62 @@ const basicStateReducer = (state, action) => {
     }
     return state;
 };
+const PubSubStoreClass = (() => {
+    const wm = new WeakMap();
+    class PubSubStore {
+        constructor(initialState, reducer) {
+            // const
+            const pubId = (0, nanoid_1.nanoid)();
+            wm.set(this, { state: initialState, reducer, pubId });
+        }
+        dispatch(action) {
+            const all = wm.get(this);
+            const current = deepclone(all.reducer(all.state, action));
+            wm.set(this, { ...all, state: current });
+            pubsub_js_1.default.publish(all.pubId, null);
+        }
+        subscribe(fn) {
+            const { pubId } = wm.get(this);
+            const id = pubsub_js_1.default.subscribe(pubId, fn);
+            return id;
+        }
+        unsubscribe(id) {
+            return pubsub_js_1.default.unsubscribe(id);
+        }
+        getCurrentState() {
+            const { state } = wm.get(this);
+            return deepclone(state);
+        }
+    }
+    return PubSubStore;
+})();
+// type PubSubStore = typeof PubSubStoreClass;
 const createPubSubStore = (initialState, reducer) => {
-    let state__ = initialState;
-    const pubId = (0, nanoid_1.nanoid)();
-    const getCurrentState = () => state__;
-    const setCurrentState = (newState) => {
-        state__ = newState;
-        pubsub_js_1.default.publish(pubId, null);
+    const store = new PubSubStoreClass(initialState, reducer);
+    /*let state__ = initialState;
+    const pubId = nanoid();
+  
+    const getCurrentState = () => deepclone(state__);
+  
+    const setCurrentState = (newState: State) => {
+      state__ = newState;
+      PubSub.publish(pubId, null);
     };
-    const dispatch = (action) => {
-        setCurrentState(reducer(getCurrentState(), action));
+  
+    const dispatch: Dispatch<ActionType, Payload> = (action) => {
+      const currentState = reducer(getCurrentState(), action);
+      setCurrentState(deepclone(currentState));
     };
-    const subscribe = (fn) => {
-        const id = pubsub_js_1.default.subscribe(pubId, fn);
-        return id;
+  
+    const subscribe = (fn: (message: string) => void) => {
+      const id = PubSub.subscribe(pubId, fn);
+      return id;
     };
-    const unsubscribe = (id) => {
-        return pubsub_js_1.default.unsubscribe(id);
-    };
-    return {
-        dispatch,
-        subscribe,
-        unsubscribe,
-        getCurrentState,
-    };
+  
+    const unsubscribe = (id: string) => {
+      return PubSub.unsubscribe(id);
+    };*/
+    return store;
 };
 exports.createPubSubStore = createPubSubStore;
 const usePubSubStore = (store) => {

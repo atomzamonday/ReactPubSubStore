@@ -51,6 +51,60 @@ type PubSubStore<State, ActionType extends string, Payload extends unknown> = {
   getCurrentState: () => State;
 };
 
+const PubSubStoreClass = (() => {
+  const wm = new WeakMap();
+  class PubSubStore<State, ActionType extends string, Payload extends unknown> {
+    constructor(
+      initialState: State,
+      reducer: Reducer<State, Action<ActionType, Payload>>
+    ) {
+      // const
+      const pubId = nanoid();
+      wm.set(this, { state: initialState, reducer, pubId });
+    }
+    dispatch(action: Action<ActionType, Payload>) {
+      const all = <
+        {
+          state: State;
+          reducer: Reducer<State, Action<ActionType, Payload>>;
+          pubId: string;
+        }
+      >wm.get(this);
+      const current = deepclone(all.reducer(all.state, action));
+      wm.set(this, { ...all, state: current });
+      PubSub.publish(all.pubId, null);
+    }
+    subscribe(fn: (message: string) => void) {
+      const { pubId } = <
+        {
+          // state: State;
+          // reducer: Reducer<State, Action<ActionType, Payload>>;
+          pubId: string;
+        }
+      >wm.get(this);
+      const id = PubSub.subscribe(pubId, fn);
+      return id;
+    }
+    unsubscribe(id: string) {
+      return PubSub.unsubscribe(id);
+    }
+    getCurrentState() {
+      const { state } = <
+        {
+          state: State;
+          // reducer: Reducer<State, Action<ActionType, Payload>>;
+          // pubId: string;
+        }
+      >wm.get(this);
+      return deepclone(state);
+    }
+  }
+
+  return PubSubStore;
+})();
+
+// type PubSubStore = typeof PubSubStoreClass;
+
 const createPubSubStore = <
   State,
   ActionType extends string,
@@ -59,10 +113,11 @@ const createPubSubStore = <
   initialState: State,
   reducer: Reducer<State, Action<ActionType, Payload>>
 ): PubSubStore<State, ActionType, Payload> => {
-  let state__ = initialState;
+  const store = new PubSubStoreClass(initialState, reducer);
+  /*let state__ = initialState;
   const pubId = nanoid();
 
-  const getCurrentState = () => state__;
+  const getCurrentState = () => deepclone(state__);
 
   const setCurrentState = (newState: State) => {
     state__ = newState;
@@ -70,7 +125,8 @@ const createPubSubStore = <
   };
 
   const dispatch: Dispatch<ActionType, Payload> = (action) => {
-    setCurrentState(reducer(getCurrentState(), action));
+    const currentState = reducer(getCurrentState(), action);
+    setCurrentState(deepclone(currentState));
   };
 
   const subscribe = (fn: (message: string) => void) => {
@@ -80,14 +136,9 @@ const createPubSubStore = <
 
   const unsubscribe = (id: string) => {
     return PubSub.unsubscribe(id);
-  };
+  };*/
 
-  return {
-    dispatch,
-    subscribe,
-    unsubscribe,
-    getCurrentState,
-  };
+  return store;
 };
 
 const usePubSubStore = <
